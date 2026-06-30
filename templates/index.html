@@ -1,0 +1,119 @@
+
+
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Informes de Patología</title>
+  <link rel="stylesheet" href="../static/styles.css">
+</head>
+
+<body>
+
+  <!-- HEADER / PRESENTACIÓN -->
+  <header class="hero">
+    <h1>Informes para Patología</h1>
+    <p>Sistema de carga y gestión de informes</p>
+
+    <button id="btnAyuda">Ayuda</button>
+  </header>
+
+  <!-- SECCIONES -->
+  <main class="container">
+
+    <section class="card">
+      <div class="tool-box">
+        <h1>Transformador de Documentos</h1>
+
+        <input type="file" id="fileInput" hidden />
+
+        <button id="btnSubir">Subir documento</button>
+        <button id="btnTransformar" disabled>Transformar y descargar</button>
+
+        <p id="estado">Ningún documento cargado</p>
+      </div>
+    </section>
+
+    <section class="card">
+
+      <div class="tool-box">
+
+        <h1>Generador de Estadísticas</h1>
+
+        <!-- INPUT 1 -->
+        <div class="upload-block">
+          <button id="btnPericias">Seleccionar pericias ingresadas</button>
+          <p id="estadoPericias" class="estado">⛔ No cargado</p>
+        </div>
+
+        <!-- INPUT 2 -->
+        <div class="upload-block">
+          <button id="btnMedicas">Seleccionar trabajo de médicas</button>
+          <p id="estadoMedicas" class="estado">⛔ No cargado</p>
+        </div>
+
+        <!-- INPUT 3 -->
+        <div class="upload-block">
+          <button id="btnExpedientes">Seleccionar expedientes</button>
+          <p id="estadoExpedientes" class="estado">⛔ No cargado</p>
+        </div>
+
+        <hr style="margin: 20px 0;">
+
+        <!-- MES -->
+        <label for="mesSelect"><strong>Seleccionar mes</strong></label>
+        <select id="mesSelect">
+          <option value="">-- Seleccionar --</option>
+          <option value="1">Enero</option>
+          <option value="2">Febrero</option>
+          <option value="3">Marzo</option>
+          <option value="4">Abril</option>
+          <option value="5">Mayo</option>
+          <option value="6">Junio</option>
+          <option value="7">Julio</option>
+          <option value="8">Agosto</option>
+          <option value="9">Septiembre</option>
+          <option value="10">Octubre</option>
+          <option value="11">Noviembre</option>
+          <option value="12">Diciembre</option>
+        </select>
+
+
+        <label for="anio">Año</label>
+        <select id="anio" name="anio" required>
+          <option value="">Seleccionar año</option>
+        </select>
+
+        <hr style="margin: 20px 0;">
+
+        <!-- BOTÓN FINAL -->
+        <button id="btnDescargarStats" disabled>
+          Descargar estadísticas
+        </button>
+
+      </div>
+
+    </section>
+
+    <section class="card">
+      <h2>Sección 3</h2>
+      <p>Contenido de la tercera sección.</p>
+    </section>
+
+  </main>
+
+  <!-- MODAL AYUDA -->
+  <div id="modalAyuda" class="modal hidden">
+    <div class="modal-content">
+      <h2>Ayuda</h2>
+      <p>Acá después vamos a poner instrucciones del sistema.</p>
+      <button id="cerrarAyuda">Cerrar</button>
+    </div>
+  </div>
+
+  <script src="../static/script.js"></script>
+</body>
+
+</html>
