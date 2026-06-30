@@ -3,7 +3,7 @@ print("🔥 ESTOY EJECUTANDO ESTE APP.PY")
 from flask import Flask, request, send_file, jsonify, render_template
 from flask_cors import CORS
 import pandas as pd
-from io import BytesIO
+from io import BytesIO, StringIO
 import traceback
 from openpyxl import load_workbook
 from datetime import datetime
@@ -48,8 +48,23 @@ def leer_archivo(file, filename):
         )
 
         if es_html:
-            html_str = content.decode("utf-8", errors="ignore")
-            tables = pd.read_html(html_str)
+            html_str = None
+            for encoding in ("utf-8-sig", "utf-8", "cp1252", "latin-1"):
+                try:
+                    html_str = content.decode(encoding)
+                    break
+                except UnicodeDecodeError:
+                    pass
+
+            if html_str is None:
+                html_str = content.decode("latin-1", errors="replace")
+
+            table_pos = html_str.lower().find("<table")
+            if table_pos == -1:
+                raise ValueError("No se encontraron tablas HTML en el archivo subido")
+
+            html_str = html_str[table_pos:]
+            tables = pd.read_html(StringIO(html_str), flavor="html5lib")
             return tables[0]
 
         elif filename.endswith(".xlsx"):
