@@ -131,7 +131,7 @@ function actualizarBotonStats() {
   });
 
   btnDescargarStats.disabled =
-    !(periciasOK && medicasOK && expedientesOK && mesOK && anioOK);
+    !(periciasOK && mesOK && anioOK);
 }
 
 function validarSeleccion() {
@@ -255,7 +255,7 @@ btnDescargarStats.addEventListener("click", async () => {
   const formData = new FormData();
 
   // ⚠️ IMPORTANTE: nombres deben coincidir con FastAPI
-  formData.append("expedientes", expedientesFile);
+  formData.append("pericias", periciasFile);
   formData.append("mes", mesSeleccionado);
   formData.append("anio", anioSeleccionado);
 

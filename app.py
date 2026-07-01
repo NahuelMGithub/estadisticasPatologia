@@ -133,17 +133,28 @@ def transformar():
 @app.route("/estadisticas", methods=["POST"])
 def estadisticas():
     try:
-        file = request.files["expedientes"]
+        file = request.files["pericias"]
         mes = int(request.form.get("mes"))
         anio = int(request.form.get("anio"))  # 👈 ESTO FALTABA
-        df = pd.read_excel(file)
+        df = pd.read_excel(file, sheet_name="Hoja 1")
 
-        df["DEPTO. JUDICIAL"] = df["DEPTO. JUDICIAL"].astype(str).str.upper()
-        df["FECHA DE SOLICITUD"] = pd.to_datetime(df["FECHA DE SOLICITUD"], errors="coerce")
+        columnas_requeridas = ["INGRESO", "DPTO.", "MATERIAL RECIBIDO", "TIPO DE MUESTRA ROTULO", "Columna1"]
+        faltantes = [col for col in columnas_requeridas if col not in df.columns]
+        if faltantes:
+            raise ValueError(f"Faltan columnas requeridas en Pericias: {', '.join(faltantes)}")
+
+        df["DPTO."] = df["DPTO."].astype(str).str.upper()
+        df["INGRESO"] = pd.to_datetime(df["INGRESO"], errors="coerce")
+        df["MATERIAL RECIBIDO"] = df["MATERIAL RECIBIDO"].fillna("").astype(str).str.upper()
+        df["MUESTRA_NORMALIZADA"] = (
+            df["TIPO DE MUESTRA ROTULO"].fillna("").astype(str)
+            + " "
+            + df["Columna1"].fillna("").astype(str)
+        ).str.upper()
 
         df = df[
-    (df["FECHA DE SOLICITUD"].dt.month == mes) &
-    (df["FECHA DE SOLICITUD"].dt.year == anio)
+    (df["INGRESO"].dt.month == mes) &
+    (df["INGRESO"].dt.year == anio)
 ]
 
         # -------------------------
@@ -153,18 +164,71 @@ def estadisticas():
         template_path = BASE_DIR / "data" / "template_estadisticas.xlsx"
 
         wb = load_workbook(template_path)
-        ws = wb.active
+        ws = wb["Hoja1"]
 
         # -------------------------
-        # MAPEO A6:A25 → R6:R25
+        # MAPEO A6:A25 → B6:P25
         # -------------------------
         for row in range(6, 26):
             depto = ws[f"A{row}"].value
 
             if depto:
                 depto = str(depto).upper()
-                count = df[df["DEPTO. JUDICIAL"] == depto].shape[0]
-                ws[f"R{row}"] = count
+                df_depto = df[df["DPTO."] == depto]
+                material = df_depto["MATERIAL RECIBIDO"]
+                muestra = df_depto["MUESTRA_NORMALIZADA"]
+                frascos = pd.to_numeric(
+                    material.str.extract(r"(\d+)\s*FP", expand=False),
+                    errors="coerce"
+                ).fillna(0)
+
+                ws[f"B{row}"] = df_depto.shape[0]
+                ws[f"C{row}"] = int(frascos.sum())
+                ws[f"D{row}"] = ((material != "") & ~material.str.contains("FP", na=False)).sum()
+                ws[f"E{row}"] = (muestra.str.contains("FETO", na=False) & ~muestra.str.contains("POOL FETO", na=False)).sum()
+                ws[f"F{row}"] = muestra.str.contains("PLACENTA", na=False).sum()
+                ws[f"G{row}"] = muestra.str.contains("POOL ADULTO", na=False).sum()
+                ws[f"H{row}"] = muestra.str.contains("POOL MENOR", na=False).sum()
+                ws[f"I{row}"] = muestra.str.contains("POOL FETO", na=False).sum()
+                ws[f"J{row}"] = (
+                    muestra.str.contains("VÍA AÉREA", na=False)
+                    | muestra.str.contains("VIA AEREA", na=False)
+                    | muestra.str.contains("VIA AREA", na=False)
+                    | muestra.str.contains("VÍA AREA", na=False)
+                ).sum()
+                ws[f"K{row}"] = muestra.str.contains("HAF", na=False).sum()
+                ws[f"L{row}"] = muestra.str.contains("HAB", na=False).sum()
+                ws[f"M{row}"] = muestra.str.contains("ELECTROCU", na=False).sum()
+                ws[f"N{row}"] = muestra.str.contains("SURCO", na=False).sum()
+                ws[f"O{row}"] = (
+                    muestra.str.contains("LOSANGE S/E", na=False)
+                    | (muestra.str.contains("LOSANGE", na=False) & muestra.str.contains("S/E", na=False))
+                ).sum()
+                ws[f"P{row}"] = muestra.str.contains("SIN ESPECIFICAR", na=False).sum()
+
+                if depto == "LA PLATA":
+                    diagnostico = {
+                        "B6 total": int(ws[f"B{row}"].value),
+                        "C6 frascos": int(ws[f"C{row}"].value),
+                        "D6 otros": int(ws[f"D{row}"].value),
+                        "E6 feto": int(ws[f"E{row}"].value),
+                        "F6 placenta": int(ws[f"F{row}"].value),
+                        "G6 pool adulto": int(ws[f"G{row}"].value),
+                        "H6 pool menor": int(ws[f"H{row}"].value),
+                        "I6 pool feto": int(ws[f"I{row}"].value),
+                        "J6 via aerea": int(ws[f"J{row}"].value),
+                        "K6 HAF": int(ws[f"K{row}"].value),
+                        "L6 HAB": int(ws[f"L{row}"].value),
+                        "M6 electrocucion": int(ws[f"M{row}"].value),
+                        "N6 surco": int(ws[f"N{row}"].value),
+                        "O6 losange sin especificar": int(ws[f"O{row}"].value),
+                        "P6 sin especificar": int(ws[f"P{row}"].value),
+                    }
+                    print("DIAGNOSTICO LA PLATA")
+                    print("Registros filtrados:", df_depto.shape[0])
+                    print("MATERIAL RECIBIDO unicos:", sorted(material.unique()))
+                    print("MUESTRA_NORMALIZADA unicos:", sorted(muestra.unique()))
+                    print("Resultados B6:P6:", diagnostico)
 
         # -------------------------
         # 🔢 SUMA B26:R26
@@ -197,7 +261,7 @@ def estadisticas():
         }
 
         nombre_mes = meses.get(mes, "MES")
-        año = datetime.now().year
+        año = anio
 
         return send_file(
             output,
