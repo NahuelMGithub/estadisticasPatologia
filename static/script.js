@@ -256,6 +256,9 @@ btnDescargarStats.addEventListener("click", async () => {
 
   // ⚠️ IMPORTANTE: nombres deben coincidir con FastAPI
   formData.append("pericias", periciasFile);
+  if (expedientesFile) {
+    formData.append("expedientes", expedientesFile);
+  }
   formData.append("mes", mesSeleccionado);
   formData.append("anio", anioSeleccionado);
 

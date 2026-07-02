@@ -108,6 +108,58 @@ def separar_ufi(df):
 # -------------------------
 # 🚀 TRANSFORMAR
 # -------------------------
+def normalizar_departamental(valor):
+    if pd.isna(valor):
+        return ""
+
+    return " ".join(str(valor).strip().upper().split())
+
+
+def leer_hoja_expedientes(expedientes_file):
+    columnas_requeridas = {"FECHA DE SOLICITUD", "DEPTO. JUDICIAL"}
+    excel = pd.ExcelFile(expedientes_file)
+    hojas_validas = []
+
+    for hoja in excel.sheet_names:
+        df_hoja = pd.read_excel(excel, sheet_name=hoja)
+        if columnas_requeridas.issubset(df_hoja.columns):
+            hojas_validas.append((hoja, df_hoja))
+
+    if not hojas_validas:
+        raise ValueError(
+            "No se encontró una hoja válida de expedientes con las columnas "
+            "FECHA DE SOLICITUD y DEPTO. JUDICIAL."
+        )
+
+    if len(hojas_validas) > 1:
+        print(
+            "Se encontró más de una hoja válida de expedientes; "
+            f"se usará la primera: {hojas_validas[0][0]}"
+        )
+
+    return hojas_validas[0][1]
+
+
+def contar_expedientes_por_departamental(expedientes_file, mes, anio):
+    df_exp = leer_hoja_expedientes(expedientes_file)
+
+    df_exp = df_exp.copy()
+    df_exp["FECHA DE SOLICITUD"] = pd.to_datetime(
+        df_exp["FECHA DE SOLICITUD"],
+        errors="coerce"
+    )
+    df_exp["DEPTO_NORMALIZADO"] = df_exp["DEPTO. JUDICIAL"].apply(normalizar_departamental)
+
+    df_exp = df_exp[
+        df_exp["FECHA DE SOLICITUD"].notna()
+        & (df_exp["DEPTO_NORMALIZADO"] != "")
+        & (df_exp["FECHA DE SOLICITUD"].dt.month == mes)
+        & (df_exp["FECHA DE SOLICITUD"].dt.year == anio)
+    ]
+
+    return df_exp.groupby("DEPTO_NORMALIZADO").size().to_dict()
+
+
 @app.route("/transformar", methods=["POST"])
 def transformar():
     try:
@@ -134,6 +186,7 @@ def transformar():
 def estadisticas():
     try:
         file = request.files["pericias"]
+        expedientes_file = request.files.get("expedientes")
         mes = int(request.form.get("mes"))
         anio = int(request.form.get("anio"))  # 👈 ESTO FALTABA
         df = pd.read_excel(file, sheet_name="Hoja 1")
@@ -165,6 +218,16 @@ def estadisticas():
 
         wb = load_workbook(template_path)
         ws = wb["Hoja1"]
+        expedientes_por_depto = {}
+        expedientes_cargados = False
+
+        if expedientes_file and expedientes_file.filename:
+            expedientes_cargados = True
+            expedientes_por_depto = contar_expedientes_por_departamental(
+                expedientes_file,
+                mes,
+                anio
+            )
 
         # -------------------------
         # MAPEO A6:A25 → B6:P25
@@ -174,6 +237,7 @@ def estadisticas():
 
             if depto:
                 depto = str(depto).upper()
+                depto_normalizado = normalizar_departamental(depto)
                 df_depto = df[df["DPTO."] == depto]
                 material = df_depto["MATERIAL RECIBIDO"]
                 muestra = df_depto["MUESTRA_NORMALIZADA"]
@@ -205,6 +269,8 @@ def estadisticas():
                     | (muestra.str.contains("LOSANGE", na=False) & muestra.str.contains("S/E", na=False))
                 ).sum()
                 ws[f"P{row}"] = muestra.str.contains("SIN ESPECIFICAR", na=False).sum()
+                if expedientes_cargados:
+                    ws[f"R{row}"] = int(expedientes_por_depto.get(depto_normalizado, 0))
 
                 if depto == "LA PLATA":
                     diagnostico = {
