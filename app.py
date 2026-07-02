@@ -8,6 +8,7 @@ import traceback
 from openpyxl import load_workbook
 from datetime import datetime
 from pathlib import Path
+import unicodedata
 
 app = Flask(__name__)
 CORS(app)
@@ -112,7 +113,26 @@ def normalizar_departamental(valor):
     if pd.isna(valor):
         return ""
 
-    return " ".join(str(valor).strip().upper().split())
+    texto = " ".join(str(valor).strip().upper().split())
+    texto = unicodedata.normalize("NFD", texto)
+    return "".join(char for char in texto if unicodedata.category(char) != "Mn")
+
+
+def normalizar_texto(valor):
+    return normalizar_departamental(valor)
+
+
+def normalizar_estado_medicas(valor):
+    texto = normalizar_texto(valor)
+
+    if "CONCORDANT" in texto:
+        return "CONCORDANTE"
+    if "DIAGN" in texto:
+        return "DIAGNOSTICO"
+    if "AUTOL" in texto or ("AUT" in texto and "LISIS" in texto):
+        return "AUTOLISIS"
+
+    return texto
 
 
 def leer_hoja_expedientes(expedientes_file):
@@ -160,6 +180,91 @@ def contar_expedientes_por_departamental(expedientes_file, mes, anio):
     return df_exp.groupby("DEPTO_NORMALIZADO").size().to_dict()
 
 
+def leer_hoja_medicas(medicas_file):
+    excel = pd.ExcelFile(medicas_file)
+    hojas_validas = []
+
+    for hoja in excel.sheet_names:
+        df_hoja = pd.read_excel(excel, sheet_name=hoja, header=None)
+        if df_hoja.shape[1] < 5 or df_hoja.shape[0] < 8:
+            continue
+
+        df_med = df_hoja.iloc[7:, [0, 2, 3, 4]].copy()
+        df_med.columns = ["FECHA", "ESTADO", "CARATULA", "DEPARTAMENTO"]
+        fechas = pd.to_datetime(df_med["FECHA"], errors="coerce")
+        departamentos = df_med["DEPARTAMENTO"].apply(normalizar_departamental)
+
+        if fechas.notna().any() and (departamentos != "").any():
+            hojas_validas.append((hoja, df_med))
+
+    if not hojas_validas:
+        raise ValueError(
+            "No se encontró una hoja válida de médicas con datos en las columnas "
+            "A (Fecha), C (Estado), D (Carátula) y E (Departamento) desde la fila 8."
+        )
+
+    if len(hojas_validas) > 1:
+        print(
+            "Se encontró más de una hoja válida de médicas; "
+            f"se usará la primera: {hojas_validas[0][0]}"
+        )
+
+    return hojas_validas[0][1]
+
+
+def completar_hoja2_medicas(wb, medicas_file, mes, anio):
+    df_med = leer_hoja_medicas(medicas_file)
+    df_med = df_med.copy()
+    df_med["FECHA"] = pd.to_datetime(df_med["FECHA"], errors="coerce")
+    df_med["DEPTO_NORMALIZADO"] = df_med["DEPARTAMENTO"].apply(normalizar_departamental)
+    df_med["CARATULA_NORMALIZADA"] = df_med["CARATULA"].apply(normalizar_texto)
+    df_med["ESTADO_NORMALIZADO"] = df_med["ESTADO"].apply(normalizar_estado_medicas)
+
+    df_med = df_med[
+        df_med["FECHA"].notna()
+        & (df_med["DEPTO_NORMALIZADO"] != "")
+        & (df_med["FECHA"].dt.month == mes)
+        & (df_med["FECHA"].dt.year == anio)
+    ]
+
+    ws2 = wb["Hoja2"]
+    columnas_caratula = {
+        "C": "ACM",
+        "D": "HOMICIDIO",
+        "E": "HOMICIDIO CULPOSO",
+        "F": "SUICIDIO",
+        "G": "HALLAZGO",
+        "H": "MALA PRAXIS",
+        "I": "MUERTE POR ACCIDENTE",
+        "J": "OTROS",
+    }
+    columnas_estado = {
+        "K": "CONCORDANTE",
+        "L": "DIAGNOSTICO",
+        "M": "AUTOLISIS",
+    }
+
+    for row in range(6, 26):
+        depto = ws2[f"A{row}"].value
+        if not depto:
+            continue
+
+        depto_normalizado = normalizar_departamental(depto)
+        df_depto = df_med[df_med["DEPTO_NORMALIZADO"] == depto_normalizado]
+
+        ws2[f"B{row}"] = int(df_depto.shape[0])
+
+        for col, caratula in columnas_caratula.items():
+            ws2[f"{col}{row}"] = int(
+                (df_depto["CARATULA_NORMALIZADA"] == caratula).sum()
+            )
+
+        for col, estado in columnas_estado.items():
+            ws2[f"{col}{row}"] = int(
+                (df_depto["ESTADO_NORMALIZADO"] == estado).sum()
+            )
+
+
 @app.route("/transformar", methods=["POST"])
 def transformar():
     try:
@@ -187,6 +292,7 @@ def estadisticas():
     try:
         file = request.files["pericias"]
         expedientes_file = request.files.get("expedientes")
+        medicas_file = request.files.get("medicas")
         mes = int(request.form.get("mes"))
         anio = int(request.form.get("anio"))  # 👈 ESTO FALTABA
         df = pd.read_excel(file, sheet_name="Hoja 1")
@@ -228,6 +334,9 @@ def estadisticas():
                 mes,
                 anio
             )
+
+        if medicas_file and medicas_file.filename:
+            completar_hoja2_medicas(wb, medicas_file, mes, anio)
 
         # -------------------------
         # MAPEO A6:A25 → B6:P25
