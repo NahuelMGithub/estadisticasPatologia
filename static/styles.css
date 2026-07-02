@@ -59,3 +59,115 @@ button:disabled {
   margin-top: 15px;
   font-size: 14px;
 }
+
+/* =======================
+   HEADER / HERO
+======================= */
+
+.hero {
+  background: linear-gradient(135deg, #0d6efd, #084298);
+  color: white;
+  padding: 50px 20px;
+  text-align: center;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+}
+
+.hero-content {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: bold;
+}
+
+.hero-subtitle {
+  margin-top: 15px;
+  font-size: 1.1rem;
+  opacity: 0.95;
+}
+
+.hero-text {
+  margin-top: 10px;
+  font-size: 0.95rem;
+  opacity: 0.85;
+}
+
+/* =======================
+   BOTÓN AYUDA GENERAL
+======================= */
+
+.btn-ayuda {
+  width: auto;
+  display: inline-block;
+  margin-top: 25px;
+  padding: 12px 24px;
+
+  background: white;
+  color: #084298;
+
+  font-weight: bold;
+  font-size: 15px;
+
+  border-radius: 30px;
+  border: none;
+
+  transition: all 0.25s ease;
+}
+
+.btn-ayuda:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.btn-ayuda-seccion {
+  width: auto;
+  display: inline-block;
+  margin: 15px auto 0;
+  padding: 8px 16px;
+
+  background: #eef4ff;
+  color: #084298;
+
+  font-weight: bold;
+
+  border: 1px solid #cfe2ff;
+}
+
+/* =======================
+   MODAL
+======================= */
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 100%;
+
+  background: rgba(0, 0, 0, 0.6);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 9999;
+}
+
+.modal-content {
+  background: white;
+  padding: 25px;
+  border-radius: 10px;
+
+  width: 500px;
+  max-width: 90%;
+
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.hidden {
+  display: none;
+}

@@ -317,3 +317,89 @@ btnDescargarStats.addEventListener("click", async () => {
     actualizarBotonStats();
   }
 });
+
+
+// =======================
+// BOTONES DE AYUDA
+// =======================
+
+// Elementos
+const btnAyuda = document.getElementById("btnAyuda");
+const btnAyudaSeccion1 = document.getElementById("btnAyudaSeccion1");
+const btnAyudaSeccion2 = document.getElementById("btnAyudaSeccion2");
+const btnAyudaSeccion3 = document.getElementById("btnAyudaSeccion3");
+
+const modal = document.getElementById("modalAyuda");
+const modalContenido = document.querySelector("#modalAyuda .modal-content");
+
+// Datos
+let ayudas = {};
+let ayudasCargadas = false;
+const ayudasPromise = cargarAyudas();
+
+// Cargar JSON
+async function cargarAyudas() {
+  try {
+    const response = await fetch("/static/ayuda.json");
+    ayudas = await response.json();
+    ayudasCargadas = true;
+  } catch (error) {
+    console.error("Error cargando ayuda:", error);
+  }
+}
+
+// Abrir modal
+async function abrirAyuda(seccion) {
+
+  if (!ayudasCargadas) {
+    modalContenido.innerHTML = `
+      <h2>Cargando ayuda...</h2>
+      <p>Espere un momento.</p>
+    `;
+    modal.classList.remove("hidden");
+    await ayudasPromise;
+  }
+
+  const ayuda = ayudas[seccion];
+
+  if (!ayuda) {
+    console.error("No existe la ayuda:", seccion);
+    modal.classList.add("hidden");
+    return;
+  }
+
+  modalContenido.innerHTML = `
+    <h2>${ayuda.titulo}</h2>
+    <p>${ayuda.descripcion}</p>
+
+    <ol>
+      ${ayuda.pasos.map(paso => `<li>${paso}</li>`).join("")}
+    </ol>
+
+    <button id="cerrarAyuda">Cerrar</button>
+  `;
+
+  document
+    .getElementById("cerrarAyuda")
+    .addEventListener("click", cerrarModal);
+
+  modal.classList.remove("hidden");
+}
+
+// Cerrar modal
+function cerrarModal() {
+  modal.classList.add("hidden");
+}
+
+// Eventos
+btnAyuda.addEventListener("click", () => abrirAyuda("general"));
+
+btnAyudaSeccion1.addEventListener("click", () => abrirAyuda("transformador"));
+
+btnAyudaSeccion2.addEventListener("click", () => abrirAyuda("estadisticas"));
+
+btnAyudaSeccion3.addEventListener("click", () => abrirAyuda("informes"));
+
+// =======================
+// FIN BOTONES DE AYUDA
+// =======================

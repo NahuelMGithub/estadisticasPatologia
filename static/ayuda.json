@@ -1,0 +1,36 @@
+{
+  "general": {
+    "titulo": "Bienvenido al sistema",
+    "descripcion": "Esta aplicación reúne las herramientas utilizadas por el área de Patología.",
+    "pasos": [
+      "Seleccione el módulo que desea utilizar.",
+      "Cada módulo funciona de manera independiente.",
+      "Si necesita ayuda específica, utilice el botón de ayuda del módulo correspondiente.",
+      "Los archivos generados se descargarán automáticamente."
+    ]
+  },
+
+  "transformador": {
+    "titulo": "Transformador de documentos",
+    "descripcion": "Ayuda en preparacion.",
+    "pasos": [
+      "Las instrucciones de este modulo se agregaran mas adelante."
+    ]
+  },
+
+  "estadisticas": {
+    "titulo": "Generador de estadísticas",
+    "descripcion": "Ayuda en preparacion.",
+    "pasos": [
+      "Las instrucciones de este modulo se agregaran mas adelante."
+    ]
+  },
+
+  "informes": {
+    "titulo": "Módulo de informes",
+    "descripcion": "Ayuda en preparacion.",
+    "pasos": [
+      "Las instrucciones de este modulo se agregaran mas adelante."
+    ]
+  }
+}

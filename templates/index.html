@@ -12,13 +12,24 @@
 
 <body>
 
-  <!-- HEADER / PRESENTACIÓN -->
-  <header class="hero">
+<!-- HEADER / PRESENTACIÓN -->
+<header class="hero">
+  <div class="hero-content">
     <h1>Informes para Patología</h1>
-    <p>Sistema de carga y gestión de informes</p>
 
-    <button id="btnAyuda">Ayuda</button>
-  </header>
+    <p class="hero-subtitle">
+      Herramientas para transformar documentos, generar estadísticas y gestionar informes.
+    </p>
+
+    <p class="hero-text">
+      Seleccione uno de los módulos para comenzar.
+    </p>
+
+    <button id="btnAyuda" class="btn-ayuda">
+      ❓ Ayuda general
+    </button>
+  </div>
+</header>
 
   <!-- SECCIONES -->
   <main class="container">
@@ -34,7 +45,12 @@
 
         <p id="estado">Ningún documento cargado</p>
       </div>
+      <button id="btnAyudaSeccion1" class="btn-ayuda-seccion">
+  ❓ Ayuda
+</button>
     </section>
+
+    
 
     <section class="card">
 
@@ -94,12 +110,17 @@
         </button>
 
       </div>
-
+<button id="btnAyudaSeccion2" class="btn-ayuda-seccion">
+  ❓ Ayuda
+</button>
     </section>
 
     <section class="card">
       <h2>Sección 3</h2>
       <p>Contenido de la tercera sección.</p>
+      <button id="btnAyudaSeccion3" class="btn-ayuda-seccion">
+  ❓ Ayuda
+</button>
     </section>
 
   </main>
@@ -107,9 +128,7 @@
   <!-- MODAL AYUDA -->
   <div id="modalAyuda" class="modal hidden">
     <div class="modal-content">
-      <h2>Ayuda</h2>
-      <p>Acá después vamos a poner instrucciones del sistema.</p>
-      <button id="cerrarAyuda">Cerrar</button>
+
     </div>
   </div>
 
@@ -117,3 +136,4 @@
 </body>
 
 </html>
+
